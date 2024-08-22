@@ -7,7 +7,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update
 
 #3 else it will output an error about Gtk namespace not found
-RUN apt-get install -y gir1.2-gtk-3.0 
+#RUN apt-get install -y gir1.2-gtk-3.0 
 
 #4 to have add-apt-repository available
 RUN apt-get install -y software-properties-common
@@ -24,21 +24,34 @@ RUN mkdir /home/gnuradio/persistent  && chown gnuradio /home/gnuradio/persistent
 
 RUN apt-get update
 
-RUN apt-get install -y gnuradio
+# For particular builds specify tag, e.g. GNURADIO_TAG=v3.10.9.2
+ARG GR_BRANCH="main"
+ARG GR_PREFIX="/usr/local/"
+ENV GR_CLONE_DIR="gnuradio"
+
+#Clone, build and install GNU Radio
+RUN git clone --recursive --depth 1 --branch ${GR_BRANCH} \
+    https://github.com/gnuradio/gnuradio.git ${GR_CLONE_DIR}
+RUN mkdir -p ${GR_CLONE_DIR}/build/ && cd ${GR_CLONE_DIR}/build/ && \
+    cmake ../ -DCMAKE_INSTALL_PREFIX=${GR_PREFIX} && \
+    make -j$((`nproc`+1)) && \
+    make install && \
+    ldconfig
+
 
 # installing other packages needed for downloading and installing OOT modules
-RUN apt-get install -y gnuradio-dev cmake git libboost-all-dev libcppunit-dev liblog4cpp5-dev python3-pygccxml pybind11-dev liborc-dev python3-pip libgsl-dev python3
+#RUN apt-get install -y gnuradio-dev cmake git libboost-all-dev libcppunit-dev liblog4cpp5-dev python3-pygccxml pybind11-dev liborc-dev python3-pip libgsl-dev python3
 
-# of course, nothing useful can be done without vim
-RUN apt-get install -y vim 
+# of course, nothing useful can be done without an editor(s)
+RUN apt-get install -y vim nano
 
 # Fix dependency issue as noted on 'InstallingGR' wiki page for 3.10
-RUN apt-get install -y python3-packaging
+# RUN apt-get install -y python3-packaging
 
 # Install Gtk3.0
-RUN apt-get install -y libgtk-3-dev
+# RUN apt-get install -y libgtk-3-dev
 # Install PangoCairo 1.0
-RUN apt-get install -y libpangocairo-1.0-0
+# RUN apt-get install -y libpangocairo-1.0-0
 
 USER gnuradio
 
